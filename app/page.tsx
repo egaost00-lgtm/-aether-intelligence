@@ -576,6 +576,25 @@ export default function Home() {
               </div>
             </div>
           </header>
+          {/* Mobile Navigation */}
+<nav className="border-b border-white/[0.06] bg-[#07090d]/95 px-4 py-3 lg:hidden">
+  <div className="flex gap-2 overflow-x-auto">
+    {navItems.map((item) => (
+      <Link
+        key={item.label}
+        href={item.href}
+        className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-medium ${
+          item.label === "Overview"
+            ? "border-orange-400/20 bg-orange-400/[0.08] text-orange-300"
+            : "border-white/[0.07] bg-white/[0.035] text-white/50"
+        }`}
+      >
+        <span>{item.icon}</span>
+        {item.label}
+      </Link>
+    ))}
+  </div>
+</nav>
 
           <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
             {/* HERO */}
