@@ -10,18 +10,45 @@ const DB_VERSION = 1;
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    if (typeof window === "undefined" || !window.indexedDB) {
+      reject(new Error("IndexedDB is not available in this browser."));
+      return;
+    }
 
-    request.onupgradeneeded = () => {
-      const db = request.result;
+    try {
+      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
+      request.onupgradeneeded = () => {
+        const db = request.result;
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(
+          request.error ||
+            new Error("Could not open the local dataset database.")
+        );
+      };
+
+      request.onblocked = () => {
+        reject(
+          new Error("The dataset database is blocked by another connection.")
+        );
+      };
+    } catch (error) {
+      reject(
+        error instanceof Error
+          ? error
+          : new Error("Could not open the dataset database.")
+      );
+    }
   });
 }
 
@@ -29,20 +56,43 @@ export async function saveDataset(dataset: Dataset) {
   const db = await openDatabase();
 
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
+    try {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
 
-    store.put(dataset, "current");
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
 
-    transaction.oncomplete = () => {
+      transaction.onerror = () => {
+        const error =
+          transaction.error ||
+          new Error("Could not save the dataset.");
+
+        db.close();
+        reject(error);
+      };
+
+      transaction.onabort = () => {
+        const error =
+          transaction.error ||
+          new Error("Dataset save was aborted.");
+
+        db.close();
+        reject(error);
+      };
+
+      store.put(dataset, "current");
+    } catch (error) {
       db.close();
-      resolve();
-    };
 
-    transaction.onerror = () => {
-      db.close();
-      reject(transaction.error);
-    };
+      reject(
+        error instanceof Error
+          ? error
+          : new Error("Could not save the dataset.")
+      );
+    }
   });
 }
 
@@ -50,19 +100,40 @@ export async function getDataset(): Promise<Dataset | null> {
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
+    try {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get("current");
 
-    const request = store.get("current");
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result || null);
+      };
 
-    request.onsuccess = () => {
+      request.onerror = () => {
+        const error =
+          request.error ||
+          new Error("Could not read the saved dataset.");
+
+        db.close();
+        reject(error);
+      };
+
+      transaction.onabort = () => {
+        db.close();
+        reject(
+          transaction.error ||
+            new Error("Could not read the saved dataset.")
+        );
+      };
+    } catch (error) {
       db.close();
-      resolve(request.result || null);
-    };
 
-    request.onerror = () => {
-      db.close();
-      reject(request.error);
-    };
+      reject(
+        error instanceof Error
+          ? error
+          : new Error("Could not read the saved dataset.")
+      );
+    }
   });
 }
