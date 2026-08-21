@@ -10,7 +10,6 @@ type Row = Record<string, string>;
 const navItems = [
   { label: "Overview", icon: "⌂", href: "/" },
   { label: "Analytics", icon: "◫", href: "/analytics" },
-  
   { label: "Data", icon: "▣", href: "/data" },
   { label: "Reports", icon: "▤", href: "/reports" },
 ];
@@ -103,9 +102,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
-  /*
-   * Restore the last uploaded dataset after refresh.
-   */
   useEffect(() => {
     try {
       const saved = localStorage.getItem("aether-dataset");
@@ -193,10 +189,7 @@ export default function Home() {
     setUploading(true);
 
     try {
-      const extension = file.name
-        .split(".")
-        .pop()
-        ?.toLowerCase();
+      const extension = file.name.split(".").pop()?.toLowerCase();
 
       if (!["csv", "xlsx", "xls"].includes(extension || "")) {
         throw new Error("Please upload a CSV or Excel file.");
@@ -248,12 +241,12 @@ export default function Home() {
       setUploaded(true);
 
       await saveDataset({
-  fileName: file.name,
-  columns: parsedColumns,
-  rows: parsedRows,
-});
+        fileName: file.name,
+        columns: parsedColumns,
+        rows: parsedRows,
+      });
 
-console.log("Dataset loaded:", {
+      console.log("Dataset loaded:", {
         fileName: file.name,
         rows: parsedRows.length,
         columns: parsedColumns,
@@ -271,9 +264,6 @@ console.log("Dataset loaded:", {
     }
   };
 
-  /*
-   * Detect important business columns from the actual dataset.
-   */
   const detected = useMemo(() => {
     const revenueColumn = findColumn(columns, [
       "revenue",
@@ -349,9 +339,6 @@ console.log("Dataset loaded:", {
     };
   }, [columns]);
 
-  /*
-   * Calculate KPIs from the ACTUAL uploaded dataset.
-   */
   const datasetMetrics = useMemo(() => {
     const revenueColumn = detected.revenueColumn;
     const unitsColumn = detected.unitsColumn;
@@ -359,7 +346,6 @@ console.log("Dataset loaded:", {
     const totalRevenue = revenueColumn
       ? rows.reduce((sum, row) => {
           const value = toNumber(row[revenueColumn]);
-
           return sum + (Number.isFinite(value) ? value : 0);
         }, 0)
       : 0;
@@ -367,7 +353,6 @@ console.log("Dataset loaded:", {
     const totalUnits = unitsColumn
       ? rows.reduce((sum, row) => {
           const value = toNumber(row[unitsColumn]);
-
           return sum + (Number.isFinite(value) ? value : 0);
         }, 0)
       : 0;
@@ -379,9 +364,6 @@ console.log("Dataset loaded:", {
     };
   }, [rows, detected]);
 
-  /*
-   * Build revenue trend from the ACTUAL uploaded dataset.
-   */
   const trendData = useMemo(() => {
     if (!detected.dateColumn || !detected.revenueColumn) {
       return [];
@@ -431,9 +413,6 @@ console.log("Dataset loaded:", {
       });
   }, [rows, detected]);
 
-  /*
-   * Calculate growth from the actual trend.
-   */
   const growth = useMemo(() => {
     if (trendData.length < 2) {
       return null;
@@ -449,13 +428,10 @@ console.log("Dataset loaded:", {
     return ((last - first) / first) * 100;
   }, [trendData]);
 
-  /*
-   * Prevent rendering localStorage-dependent UI before hydration.
-   */
   if (!hydrated) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#07090d] text-white">
-        <div className="text-sm text-white/40">
+      <main className="flex min-h-screen items-center justify-center bg-[#07090d] px-4 text-white">
+        <div className="text-center text-sm text-white/40">
           Loading Aether Intelligence...
         </div>
       </main>
@@ -463,12 +439,12 @@ console.log("Dataset loaded:", {
   }
 
   return (
-    <main className="min-h-screen bg-[#07090d] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#07090d] text-white">
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-orange-500/[0.08] blur-[140px]" />
+        <div className="absolute -left-40 -top-40 h-[400px] w-[400px] rounded-full bg-orange-500/[0.08] blur-[140px] sm:h-[500px] sm:w-[500px]" />
 
-        <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.06] blur-[140px]" />
+        <div className="absolute -bottom-40 -right-40 h-[400px] w-[400px] rounded-full bg-emerald-500/[0.06] blur-[140px] sm:h-[500px] sm:w-[500px]" />
 
         <div
           className="absolute inset-0 opacity-[0.035]"
@@ -561,28 +537,24 @@ console.log("Dataset loaded:", {
             className="hidden"
             onChange={(e) => {
               handleUpload(e.target.files?.[0]);
-
-              // Allows selecting the same file again.
               e.currentTarget.value = "";
             }}
           />
 
           {/* Top bar */}
-          <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#07090d]/75 px-5 py-4 backdrop-blur-2xl sm:px-8">
+          <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#07090d]/90 px-4 py-3 backdrop-blur-2xl sm:px-8 sm:py-4">
             <div className="mx-auto flex max-w-[1500px] items-center justify-between">
-              <div>
-                <p className="text-xs text-white/35 lg:hidden">
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium tracking-[0.16em] text-white/35 lg:hidden">
                   AETHER INTELLIGENCE
                 </p>
 
-                <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
-                  {uploaded
-                    ? "Business Intelligence"
-                    : "Overview"}
+                <h1 className="truncate text-base font-semibold tracking-tight sm:text-xl">
+                  {uploaded ? "Business Intelligence" : "Overview"}
                 </h1>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="ml-3 flex shrink-0 items-center gap-2 sm:gap-3">
                 <div className="hidden items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white/50 sm:flex">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
@@ -592,14 +564,12 @@ console.log("Dataset loaded:", {
                     }`}
                   />
 
-                  {uploaded
-                    ? "Dataset loaded"
-                    : "No dataset"}
+                  {uploaded ? "Dataset loaded" : "No dataset"}
                 </div>
 
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05] text-sm text-white/70 transition hover:bg-white/[0.09]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05] text-xs text-white/70 transition hover:bg-white/[0.09] sm:h-10 sm:w-10 sm:text-sm"
                 >
                   AK
                 </button>
@@ -607,19 +577,21 @@ console.log("Dataset loaded:", {
             </div>
           </header>
 
-          <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
             {/* HERO */}
-            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-              <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-orange-400/15 bg-orange-400/[0.06] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="min-w-0">
+                <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-orange-400/15 bg-orange-400/[0.06] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-orange-300 sm:text-[10px] sm:tracking-[0.18em]">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
 
-                  {uploaded
-                    ? "Dataset Intelligence"
-                    : "AI Business Intelligence"}
+                  <span className="truncate">
+                    {uploaded
+                      ? "Dataset Intelligence"
+                      : "AI Business Intelligence"}
+                  </span>
                 </div>
 
-                <h2 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                <h2 className="max-w-full break-words text-[2rem] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-4xl">
                   {uploaded ? (
                     <>
                       {fileName}
@@ -656,7 +628,7 @@ console.log("Dataset loaded:", {
                     ?.click()
                 }
                 disabled={uploading}
-                className="w-fit rounded-xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.1] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full shrink-0 rounded-xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.1] disabled:cursor-not-allowed disabled:opacity-50 sm:w-fit"
               >
                 {uploading
                   ? "Reading Data..."
@@ -676,23 +648,22 @@ console.log("Dataset loaded:", {
             {!uploaded ? (
               <>
                 {/* EMPTY DATA STATE */}
-
-                <div className="mt-8 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-8 sm:p-12">
+                <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5 sm:mt-8 sm:rounded-3xl sm:p-12">
                   <div className="mx-auto max-w-3xl text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-400/[0.08] text-2xl">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-400/[0.08] text-xl sm:h-16 sm:w-16 sm:text-2xl">
                       ✦
                     </div>
 
-                    <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-orange-400/15 bg-orange-400/[0.06] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300">
+                    <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-orange-400/15 bg-orange-400/[0.06] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-orange-300 sm:mt-6 sm:text-[10px] sm:tracking-[0.18em]">
                       <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
                       Awaiting your data
                     </div>
 
-                    <h3 className="mt-5 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    <h3 className="mt-5 text-[1.65rem] font-semibold leading-tight tracking-tight sm:text-3xl">
                       Connect your business data.
                     </h3>
 
-                    <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-white/40">
+                    <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/40 sm:leading-7">
                       Upload a CSV or Excel dataset and Aether
                       Intelligence will calculate your actual
                       business metrics, trends and insights.
@@ -706,14 +677,14 @@ console.log("Dataset loaded:", {
                           ?.click()
                       }
                       disabled={uploading}
-                      className="mt-7 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-6 w-full rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7 sm:w-auto"
                     >
                       {uploading
                         ? "Reading Data..."
                         : "Upload Dataset →"}
                     </button>
 
-                    <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
+                    <div className="mt-7 grid gap-3 text-left sm:mt-8 sm:grid-cols-3">
                       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
                         <p className="text-sm font-medium">
                           Real KPIs
@@ -750,7 +721,7 @@ console.log("Dataset loaded:", {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-6">
+                <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-6">
                   <p className="text-xs text-white/35">
                     Data sources
                   </p>
@@ -769,8 +740,7 @@ console.log("Dataset loaded:", {
             ) : (
               <>
                 {/* REAL UPLOADED DATA VIEW */}
-
-                <div className="mt-8">
+                <div className="mt-7">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
 
@@ -779,7 +749,7 @@ console.log("Dataset loaded:", {
                     </p>
                   </div>
 
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight">
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
                     Your data at a glance
                   </h2>
 
@@ -790,14 +760,14 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* Dataset info */}
-                <div className="mt-6 rounded-3xl border border-emerald-400/15 bg-emerald-400/[0.035] p-6">
+                <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.035] p-4 sm:rounded-3xl sm:p-6">
                   <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-white/35">
                         Uploaded dataset
                       </p>
 
-                      <h3 className="mt-2 text-xl font-semibold">
+                      <h3 className="mt-2 break-words text-lg font-semibold sm:text-xl">
                         {fileName}
                       </h3>
 
@@ -806,33 +776,33 @@ console.log("Dataset loaded:", {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl border border-white/[0.06] bg-black/10 px-5 py-4">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+                      <div className="rounded-2xl border border-white/[0.06] bg-black/10 px-3 py-3 sm:px-5 sm:py-4">
                         <p className="text-[10px] uppercase tracking-wider text-white/30">
                           Rows
                         </p>
 
-                        <p className="mt-2 text-xl font-semibold text-emerald-300">
+                        <p className="mt-2 text-lg font-semibold text-emerald-300 sm:text-xl">
                           {rows.length.toLocaleString()}
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-white/[0.06] bg-black/10 px-5 py-4">
+                      <div className="rounded-2xl border border-white/[0.06] bg-black/10 px-3 py-3 sm:px-5 sm:py-4">
                         <p className="text-[10px] uppercase tracking-wider text-white/30">
                           Columns
                         </p>
 
-                        <p className="mt-2 text-xl font-semibold">
+                        <p className="mt-2 text-lg font-semibold sm:text-xl">
                           {columns.length}
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-white/[0.06] bg-black/10 px-5 py-4">
+                      <div className="col-span-2 rounded-2xl border border-white/[0.06] bg-black/10 px-3 py-3 sm:col-span-1 sm:px-5 sm:py-4">
                         <p className="text-[10px] uppercase tracking-wider text-white/30">
                           Status
                         </p>
 
-                        <p className="mt-2 text-xl font-semibold text-emerald-300">
+                        <p className="mt-2 text-lg font-semibold text-emerald-300 sm:text-xl">
                           Ready
                         </p>
                       </div>
@@ -841,13 +811,13 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* Real KPIs */}
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-3xl border border-white/[0.07] bg-white/[0.035] p-5">
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-5">
                     <p className="text-xs text-white/35">
                       Total Revenue
                     </p>
 
-                    <p className="mt-3 text-2xl font-semibold">
+                    <p className="mt-3 text-xl font-semibold sm:text-2xl">
                       {detected.revenueColumn
                         ? formatMoney(
                             datasetMetrics.totalRevenue
@@ -855,37 +825,37 @@ console.log("Dataset loaded:", {
                         : "—"}
                     </p>
 
-                    <p className="mt-2 text-xs text-white/25">
+                    <p className="mt-2 truncate text-xs text-white/25">
                       {detected.revenueColumn
                         ? detected.revenueColumn
                         : "Revenue column not detected"}
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-white/[0.07] bg-white/[0.035] p-5">
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-5">
                     <p className="text-xs text-white/35">
                       Units Sold
                     </p>
 
-                    <p className="mt-3 text-2xl font-semibold">
+                    <p className="mt-3 text-xl font-semibold sm:text-2xl">
                       {detected.unitsColumn
                         ? formatNumber(datasetMetrics.totalUnits)
                         : "—"}
                     </p>
 
-                    <p className="mt-2 text-xs text-white/25">
+                    <p className="mt-2 truncate text-xs text-white/25">
                       {detected.unitsColumn
                         ? detected.unitsColumn
                         : "Units column not detected"}
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-white/[0.07] bg-white/[0.035] p-5">
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-5">
                     <p className="text-xs text-white/35">
                       Records
                     </p>
 
-                    <p className="mt-3 text-2xl font-semibold">
+                    <p className="mt-3 text-xl font-semibold sm:text-2xl">
                       {datasetMetrics.records.toLocaleString()}
                     </p>
 
@@ -894,12 +864,12 @@ console.log("Dataset loaded:", {
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-emerald-400/15 bg-emerald-400/[0.04] p-5">
+                  <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.04] p-4 sm:rounded-3xl sm:p-5">
                     <p className="text-xs text-white/35">
                       Direction
                     </p>
 
-                    <p className="mt-3 text-2xl font-semibold text-emerald-300">
+                    <p className="mt-3 text-xl font-semibold text-emerald-300 sm:text-2xl">
                       {growth !== null
                         ? `${growth >= 0 ? "+" : ""}${growth.toFixed(
                             1
@@ -914,7 +884,7 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* Columns */}
-                <div className="mt-5 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-6">
+                <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-6">
                   <p className="text-xs text-white/35">
                     Detected columns
                   </p>
@@ -927,7 +897,7 @@ console.log("Dataset loaded:", {
                     {columns.map((column) => (
                       <span
                         key={column}
-                        className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-xs text-white/60"
+                        className="max-w-full truncate rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2 text-xs text-white/60"
                       >
                         {column}
                       </span>
@@ -936,8 +906,8 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* Preview */}
-                <div className="mt-5 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-6">
-                  <div className="flex items-center justify-between">
+                <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-6">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs text-white/35">
                         Live file preview
@@ -948,7 +918,7 @@ console.log("Dataset loaded:", {
                       </h3>
                     </div>
 
-                    <span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-1 text-[10px] text-emerald-300">
+                    <span className="shrink-0 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] text-emerald-300 sm:px-3 sm:text-[10px]">
                       {rows.length.toLocaleString()} records
                     </span>
                   </div>
@@ -994,8 +964,8 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* Trend */}
-                <div className="mt-5 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-6">
-                  <div className="flex items-center justify-between">
+                <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 sm:rounded-3xl sm:p-6">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs text-white/35">
                         Performance
@@ -1007,7 +977,7 @@ console.log("Dataset loaded:", {
                     </div>
 
                     {growth !== null && (
-                      <span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-1 text-[10px] text-emerald-300">
+                      <span className="shrink-0 rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] text-emerald-300 sm:px-3 sm:text-[10px]">
                         {growth >= 0
                           ? "Growing"
                           : "Declining"}
@@ -1016,7 +986,7 @@ console.log("Dataset loaded:", {
                   </div>
 
                   {trendData.length > 0 ? (
-                    <div className="mt-8 flex h-56 items-end gap-2">
+                    <div className="mt-8 flex h-48 items-end gap-1.5 sm:h-56 sm:gap-2">
                       {trendData.map((item, index) => {
                         const max = Math.max(
                           ...trendData.map(
@@ -1036,9 +1006,9 @@ console.log("Dataset loaded:", {
                         return (
                           <div
                             key={`${item.label}-${index}`}
-                            className="flex h-full flex-1 flex-col justify-end"
+                            className="flex h-full min-w-0 flex-1 flex-col justify-end"
                           >
-                            <div className="mb-2 text-center text-[9px] text-white/35">
+                            <div className="mb-2 truncate text-center text-[8px] text-white/35 sm:text-[9px]">
                               {formatNumber(item.value)}
                             </div>
 
@@ -1049,7 +1019,7 @@ console.log("Dataset loaded:", {
                               }}
                             />
 
-                            <div className="mt-2 text-center text-[10px] text-white/30">
+                            <div className="mt-2 truncate text-center text-[9px] text-white/30 sm:text-[10px]">
                               {item.label}
                             </div>
                           </div>
@@ -1057,7 +1027,7 @@ console.log("Dataset loaded:", {
                       })}
                     </div>
                   ) : (
-                    <div className="mt-8 rounded-2xl border border-white/[0.06] bg-black/10 p-8 text-center text-sm text-white/30">
+                    <div className="mt-8 rounded-2xl border border-white/[0.06] bg-black/10 p-6 text-center text-sm text-white/30 sm:p-8">
                       A date column and revenue column are
                       required to generate the trend.
                     </div>
@@ -1065,24 +1035,24 @@ console.log("Dataset loaded:", {
                 </div>
 
                 {/* AI workspace */}
-                <div className="mt-5 rounded-3xl border border-orange-400/15 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.035] to-emerald-500/[0.06] p-6">
+                <div className="mt-5 rounded-2xl border border-orange-400/15 bg-gradient-to-br from-orange-500/[0.10] via-white/[0.035] to-emerald-500/[0.06] p-4 sm:rounded-3xl sm:p-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-emerald-400 text-xl">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-emerald-400 text-lg sm:h-11 sm:w-11 sm:text-xl">
                       ✦
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-orange-300">
                         Aether AI
                       </p>
 
-                      <h3 className="mt-1 text-lg font-semibold">
+                      <h3 className="mt-1 text-base font-semibold sm:text-lg">
                         Dataset intelligence ready
                       </h3>
                     </div>
                   </div>
 
-                  <p className="mt-5 max-w-3xl text-sm leading-7 text-white/50">
+                  <p className="mt-5 max-w-3xl text-sm leading-6 text-white/50 sm:leading-7">
                     Your actual dataset is loaded. Continue to
                     Analytics or AI Analyst to generate deeper
                     business insights.
@@ -1107,7 +1077,7 @@ console.log("Dataset loaded:", {
               </>
             )}
 
-            <p className="mt-10 text-center text-[10px] uppercase tracking-[0.2em] text-white/15">
+            <p className="mt-8 text-center text-[9px] uppercase tracking-[0.16em] text-white/15 sm:mt-10 sm:text-[10px] sm:tracking-[0.2em]">
               Aether Intelligence · Turn data into decisions
             </p>
           </div>
